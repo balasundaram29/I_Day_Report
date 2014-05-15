@@ -1,0 +1,1 @@
+Just working version of Netbeans_6.9.1 project  ,to genereate production and variation reports for mb.Also copied in are  backups of both mb and sub  databases.(.sql files) for reference.
