@@ -37,30 +37,74 @@ import jxl.write.WritableWorkbook;
  */
 public class ReportGenerator {
 
-    static ResultSet rs;
+    ResultSet rs;
+    String[] types;//= {"AE50", "AE100", "AE130"};
     public static int CURR_ROW;
     public static int CURR_COL_PR = 0;
     public static int NAME_COL_PR = 3;
     public static int NAME_ROW_PR = 3;
-   
+    Connection conn;
     public static int TABLE_START_COL = 1;
-    static HashMap<String, Integer> typewiseTotal = new HashMap<String, Integer>();
+    HashMap<String, Integer> typewiseTotal = new HashMap<String, Integer>();
 
-    public static void main(String[] args) {
-        final Connection conn;
+    public int getLength(ResultSet rs) {
 
-        typewiseTotal.put("AE50", 0);
-        typewiseTotal.put("AE100", 0);
-        typewiseTotal.put("AE130", 0);
+        int i = 0;
+        try {
+            rs.beforeFirst();
+            while (rs.next()) {
+                i++;
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return 0;
+        }
+        return i;
+    }
 
+    public ReportGenerator() {
+        conn = null;
         try {
             conn = Utilities.getConnection();
+        } catch (Exception ex) {
+            ex.printStackTrace();;
+            System.exit(1);
+        }
+        try {
+            Statement stmt = conn.createStatement();
+            String query = "SELECT `type`  FROM `alltypes`";
+            ResultSet rs = stmt.executeQuery(query);
+            int k = getLength(rs);
+            types = new String[k];
+            int j = 0;
+            rs.beforeFirst();
+            while (rs.next()) {
+                types[j] = rs.getString("type");
+                j++;
+            }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        /*
+         for (int i = 0; i < types.length; i++) {
+         System.out.println("types :??? " + i + " ---" + types[i]);
+         typewiseTotal.put(types[i], 0);
+         }*/
+
+    }
+
+    public static void main(String[] args) {
+        new ReportGenerator().go();
+    }
+
+    public void go() {
+
+        try {
+
             JFrame gui = new JFrame("Generate Reports");
             gui.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             gui.setLocation(200, 200);
-
-
-
 
             JPanel pane = new JPanel();
             pane.setLayout(new GridLayout(0, 5, 10, 2));
@@ -75,6 +119,7 @@ public class ReportGenerator {
             //String dateFrom=""+(date.getYear()+1900)+"-"+(date.getMonth()+1)+"-"+(date.getDate());
 
             JButton button = new JButton("Generate Reports");
+            // final ReportGenerator genr = new ReportGenerator();
             button.addActionListener(new ActionListener() {
 
                 public void actionPerformed(ActionEvent ae) {
@@ -84,9 +129,9 @@ public class ReportGenerator {
                     date = calendarTo.getDate();
                     String dateTo = (date.getYear() + 1900) + "-" + (date.getMonth() + 1) + "-" + (date.getDate());
                     System.out.println(dateTo);
-                    try{
-                        generateTable(conn, "db_for_bis_mb",dateFrom,dateTo);
-                    }catch(Exception ex){
+                    try {
+                        generateTable(conn, dateFrom, dateTo);
+                    } catch (Exception ex) {
                         ex.printStackTrace();
                     }
 
@@ -106,24 +151,33 @@ public class ReportGenerator {
         }
     }
 
-    public static void generateTable(Connection con, String dbName, String dateFrom, String dateTo)
+    public void generateTable(Connection con, String dateFrom, String dateTo)
             throws SQLException {
-        String[] splittedDateFrom= dateFrom.split("-");
-        if (splittedDateFrom[1].length()<2)
-            splittedDateFrom[1]="0"+splittedDateFrom[1];
-        if (splittedDateFrom[2].length()<2)
-            splittedDateFrom[2]="0"+splittedDateFrom[2];
-        String indianDateFrom= splittedDateFrom[2]+"-"+splittedDateFrom[1]+"-"+splittedDateFrom[0];
-          String[] splittedDateTo= dateTo.split("-");
-           if (splittedDateTo[1].length()<2)
-            splittedDateTo[1]="0"+splittedDateTo[1];
-        if (splittedDateTo[2].length()<2)
-            splittedDateTo[2]="0"+splittedDateTo[2];
-        String indianDateTo= splittedDateTo[2]+"-"+splittedDateTo[1]+"-"+splittedDateTo[0];
+        for (int i = 0; i < types.length; i++) {
+            System.out.println("types :??? " + i + " ---" + types[i]);
+            typewiseTotal.put(types[i], 0);
+        }
+
+        String[] splittedDateFrom = dateFrom.split("-");
+        if (splittedDateFrom[1].length() < 2) {
+            splittedDateFrom[1] = "0" + splittedDateFrom[1];
+        }
+        if (splittedDateFrom[2].length() < 2) {
+            splittedDateFrom[2] = "0" + splittedDateFrom[2];
+        }
+        String indianDateFrom = splittedDateFrom[2] + "-" + splittedDateFrom[1] + "-" + splittedDateFrom[0];
+        String[] splittedDateTo = dateTo.split("-");
+        if (splittedDateTo[1].length() < 2) {
+            splittedDateTo[1] = "0" + splittedDateTo[1];
+        }
+        if (splittedDateTo[2].length() < 2) {
+            splittedDateTo[2] = "0" + splittedDateTo[2];
+        }
+        String indianDateTo = splittedDateTo[2] + "-" + splittedDateTo[1] + "-" + splittedDateTo[0];
         Statement stmt = stmt = con.createStatement();
-        String query = "SET @start_date="+"'"+dateFrom+"'";
+        String query = "SET @start_date=" + "'" + dateFrom + "'";
         stmt.executeQuery(query);
-        query = "SET @end_date ="+"'"+dateTo+"'";
+        query = "SET @end_date =" + "'" + dateTo + "'";
         stmt.executeQuery(query);
         query = "select 'Type','RHeadMax','RHeadMin','RDischMax','RDischMin','OAEffMax','OAEffMin','MaxCurrMax','MaxCurrMin'"
                 + "union all"
@@ -160,15 +214,14 @@ public class ReportGenerator {
             lbl.setCellFormat(wcf1);
             sheet.addCell(lbl);
 
-            lbl = new Label(NAME_COL_PR, NAME_ROW_PR+2, "Variation Report for the period from  "+ indianDateFrom+" to "+indianDateTo);
+            lbl = new Label(NAME_COL_PR, NAME_ROW_PR + 2, "Variation Report for the period from  " + indianDateFrom + " to " + indianDateTo);
             times = new WritableFont(WritableFont.TIMES, 13, WritableFont.BOLD);
             wcf1 = new WritableCellFormat(times);
             lbl.setCellFormat(wcf1);
             sheet.addCell(lbl);
             CURR_COL_PR = TABLE_START_COL;
 
-            CURR_ROW = NAME_ROW_PR+4;
-
+            CURR_ROW = NAME_ROW_PR + 4;
 
             while (rs.next()) {
                 CURR_COL_PR = TABLE_START_COL;
@@ -188,7 +241,6 @@ public class ReportGenerator {
             String[] commands = {"cmd", "/c", "start", "\"DummyTitle\"", "VarReport.xls"};//
             Runtime.getRuntime().exec(commands);
 
-
             query = "DROP TABLE IF EXISTS  `MonthView`";
             stmt.executeUpdate(query);
             query = "DROP VIEW IF EXISTS  `MonthView`";
@@ -201,11 +253,15 @@ public class ReportGenerator {
                     + "ORDER BY  `at_type`,year(`date`),month(`date`)";
             stmt.executeUpdate(query);
             query = "SELECT "
-                    + "MONTHNAME(STR_TO_DATE(`NMonth`, '%m')) AS `Month`,"
-                    + "`Year`,MAX(IF(`Type` = 'AE50', `Quantity`,NULL)) AS `AE50`,"
-                    + " MAX(IF(`Type` = 'AE100',`Quantity`, NULL)) AS `AE100`,"
-                    + " MAX(IF(`Type` = 'AE130',`Quantity`, NULL)) AS `AE130`"
-                    + " FROM `MonthView` GROUP BY `Month` ORDER BY `Year`  ,`NMonth`";
+                    + " MONTHNAME(STR_TO_DATE(`NMonth`, '%m')) AS `Month`,`Year`,";
+            for (int i = 0; i < types.length; i++) {
+                query = query + " MAX(IF(`Type` = '" + types[i] + "', `Quantity`,NULL)) AS `" + types[i] + "`";
+                if (i != types.length - 1) {
+                    query = query + ",";
+                }
+            }
+
+            query = query + " FROM `MonthView` GROUP BY `Month` ORDER BY `Year`  ,`NMonth`";
             // + " INTO OUTFILE 'C:/prodn.csv' "
             // + " FIELDS TERMINATED BY ','  "
             // + " OPTIONALLY ENCLOSED BY '\"'  LINES TERMINATED BY '\n'";
@@ -220,41 +276,36 @@ public class ReportGenerator {
             //Workbook wb = Workbook.getWorkbook(in);
             WritableWorkbook out1 = Workbook.createWorkbook(out);
             sheet = out1.createSheet("First sheet", 0);
-            lbl = new Label(NAME_COL_PR-2, NAME_ROW_PR, "Annai Engineering Company,Coimbatore. ");
+            lbl = new Label(NAME_COL_PR - 2, NAME_ROW_PR, "Annai Engineering Company,Coimbatore. ");
             times = new WritableFont(WritableFont.TIMES, 16, WritableFont.BOLD);
             wcf1 = new WritableCellFormat(times);
             lbl.setCellFormat(wcf1);
             sheet.addCell(lbl);
-            lbl = new Label(NAME_COL_PR-2, NAME_ROW_PR+2, "Production for the period  from  "+ indianDateFrom+" to "+indianDateTo);
+            lbl = new Label(NAME_COL_PR - 2, NAME_ROW_PR + 2, "Production for the period  from  " + indianDateFrom + " to " + indianDateTo);
             times = new WritableFont(WritableFont.TIMES, 13, WritableFont.BOLD);
             wcf1 = new WritableCellFormat(times);
             lbl.setCellFormat(wcf1);
             sheet.addCell(lbl);
-            CURR_COL_PR =  NAME_ROW_PR+2;
+            CURR_COL_PR = NAME_ROW_PR + 2;
 
-            CURR_ROW = NAME_ROW_PR+4;
-            lbl = new Label(TABLE_START_COL,CURR_ROW, "Month");
+            CURR_ROW = NAME_ROW_PR + 4;
+            lbl = new Label(TABLE_START_COL, CURR_ROW, "Month");
             lbl.setCellFormat(wcf);
             sheet.addCell(lbl);
             sheet.setColumnView(TABLE_START_COL, 20);
-            CURR_COL_PR = TABLE_START_COL + 1;
-            lbl = new Label(CURR_COL_PR, CURR_ROW, "AE50");
-            lbl.setCellFormat(wcf);
-            sheet.addCell(lbl);
+            CURR_COL_PR = TABLE_START_COL;
+            for (int i = 0; i < types.length; i++) {
+                CURR_COL_PR = CURR_COL_PR + 1;
+                lbl = new Label(CURR_COL_PR, CURR_ROW, types[i]);
+                lbl.setCellFormat(wcf);
+                sheet.addCell(lbl);
+            }
             CURR_COL_PR = CURR_COL_PR + 1;
-            lbl = new Label(CURR_COL_PR, CURR_ROW , "AE100");
-            lbl.setCellFormat(wcf);
-            sheet.addCell(lbl);
-            CURR_COL_PR = CURR_COL_PR + 1;
-            lbl = new Label(CURR_COL_PR, CURR_ROW , "AE130");
-            lbl.setCellFormat(wcf);
-            sheet.addCell(lbl);
-            CURR_COL_PR = CURR_COL_PR + 1;
-            lbl = new Label(CURR_COL_PR, CURR_ROW , "Total");
+            lbl = new Label(CURR_COL_PR, CURR_ROW, "Total");
             lbl.setCellFormat(wcf);
             sheet.addCell(lbl);
 
-            CURR_ROW = CURR_ROW  + 1;
+            CURR_ROW = CURR_ROW + 1;
 
             int t = 0;
             int monthwiseTotal;
@@ -265,31 +316,16 @@ public class ReportGenerator {
                 lbl = new Label(CURR_COL_PR, CURR_ROW, rs.getString("Month") + " " + rs.getString("Year"));
                 lbl.setCellFormat(wcf);
                 sheet.addCell(lbl);
-                CURR_COL_PR = CURR_COL_PR + 1;
 
-                t = typewiseTotal.get("AE50") + rs.getInt("AE50");
-                typewiseTotal.put("AE50", t);
-                monthwiseTotal = monthwiseTotal + rs.getInt("AE50");
-                lbl = new Label(CURR_COL_PR, CURR_ROW, rs.getString("AE50"));
-                lbl.setCellFormat(wcf);
-                sheet.addCell(lbl);
-                CURR_COL_PR = CURR_COL_PR + 1;
-
-                t = typewiseTotal.get("AE100") + rs.getInt("AE100");
-                typewiseTotal.put("AE100", t);
-                monthwiseTotal = monthwiseTotal + rs.getInt("AE100");
-                lbl = new Label(CURR_COL_PR, CURR_ROW, Integer.toString(rs.getInt("AE100")));
-                lbl.setCellFormat(wcf);
-                sheet.addCell(lbl);
-                CURR_COL_PR = CURR_COL_PR + 1;
-
-                t = typewiseTotal.get("AE130") + rs.getInt("AE130");
-                typewiseTotal.put("AE130", t);
-                monthwiseTotal = monthwiseTotal + rs.getInt("AE130");
-                lbl = new Label(CURR_COL_PR, CURR_ROW, Integer.toString(rs.getInt("AE130")));
-
-                lbl.setCellFormat(wcf);
-                sheet.addCell(lbl);
+                for (int i = 0; i < types.length; i++) {
+                    CURR_COL_PR = CURR_COL_PR + 1;
+                    t = typewiseTotal.get(types[i]) + rs.getInt(types[i]);
+                    typewiseTotal.put(types[i], t);
+                    monthwiseTotal = monthwiseTotal + rs.getInt(types[i]);
+                    lbl = new Label(CURR_COL_PR, CURR_ROW, Integer.toString(rs.getInt(types[i])));
+                    lbl.setCellFormat(wcf);
+                    sheet.addCell(lbl);
+                }
                 CURR_COL_PR = CURR_COL_PR + 1;
 
                 lbl = new Label(CURR_COL_PR, CURR_ROW, Integer.toString(monthwiseTotal));
@@ -306,23 +342,14 @@ public class ReportGenerator {
             sheet.addCell(lbl);
             CURR_COL_PR = CURR_COL_PR + 1;
 
-            a = typewiseTotal.get("AE50");
-            lbl = new Label(CURR_COL_PR, CURR_ROW, typewiseTotal.get("AE50").toString());
-            lbl.setCellFormat(wcf);
-            sheet.addCell(lbl);
-            CURR_COL_PR = CURR_COL_PR + 1;
+            for (int i = 0; i < types.length; i++) {
+                a = typewiseTotal.get(types[i]);
+                lbl = new Label(CURR_COL_PR, CURR_ROW, typewiseTotal.get(types[i]).toString());
+                lbl.setCellFormat(wcf);
+                sheet.addCell(lbl);
+                CURR_COL_PR = CURR_COL_PR + 1;
+            }
 
-            a = typewiseTotal.get("AE100");
-            lbl = new Label(CURR_COL_PR, CURR_ROW, typewiseTotal.get("AE100").toString());
-            lbl.setCellFormat(wcf);
-            sheet.addCell(lbl);
-            CURR_COL_PR = CURR_COL_PR + 1;
-
-            a = typewiseTotal.get("AE130");
-            lbl = new Label(CURR_COL_PR, CURR_ROW, typewiseTotal.get("AE130").toString());
-            lbl.setCellFormat(wcf);
-            sheet.addCell(lbl);
-            CURR_COL_PR = CURR_COL_PR + 1;
             t = 0;
             for (String key : typewiseTotal.keySet()) {
                 t = t + typewiseTotal.get(key);
@@ -330,13 +357,13 @@ public class ReportGenerator {
             lbl = new Label(CURR_COL_PR, CURR_ROW, Integer.toString(t));
             lbl.setCellFormat(wcf);
             sheet.addCell(lbl);
-            CURR_ROW = CURR_ROW+ 2;
+            CURR_ROW = CURR_ROW + 2;
             lbl = new Label(TABLE_START_COL, CURR_ROW, "For Annai Engineering Company");
             times = new WritableFont(WritableFont.TIMES, 13, WritableFont.BOLD);
             wcf1 = new WritableCellFormat(times);
             lbl.setCellFormat(wcf1);
             sheet.addCell(lbl);
-            CURR_ROW = CURR_ROW+ 3;
+            CURR_ROW = CURR_ROW + 3;
             lbl = new Label(TABLE_START_COL, CURR_ROW, "Proprietor");
             times = new WritableFont(WritableFont.TIMES, 13, WritableFont.BOLD);
             wcf1 = new WritableCellFormat(times);
@@ -347,7 +374,6 @@ public class ReportGenerator {
 
             String[] commands1 = {"cmd", "/c", "start", "\"DummyTitle\"", "ProductionReport.xls"};//
             Runtime.getRuntime().exec(commands1);
-
 
             System.out.println("Executed sqls");
 

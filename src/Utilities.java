@@ -14,14 +14,14 @@ import java.util.Properties;
  */
 public class Utilities {
 
-    public static Connection getConnection() throws SQLException {
+    public static Connection getConnection() {
 
         Connection conn = null;
         Properties connectionProps = new Properties();
         connectionProps.put("user", "root");
         connectionProps.put("password", "");
 
-
+      try{
         conn = DriverManager.getConnection(
                 "jdbc:" + "mysql" + "://"
                 + "localhost"
@@ -30,5 +30,9 @@ public class Utilities {
 
         System.out.println("Connected to database");
         return conn;
+                }catch(Exception ex){
+                    ex.printStackTrace();
+                    return null;
+                }
     }
 }
