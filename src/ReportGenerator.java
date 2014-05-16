@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.logging.Level;
@@ -67,30 +68,22 @@ public class ReportGenerator {
         try {
             conn = Utilities.getConnection();
         } catch (Exception ex) {
-            ex.printStackTrace();;
+            ex.printStackTrace();
+            ;
             System.exit(1);
         }
-        try {
-            Statement stmt = conn.createStatement();
-            String query = "SELECT `type`  FROM `alltypes`";
-            ResultSet rs = stmt.executeQuery(query);
-            int k = getLength(rs);
-            types = new String[k];
-            int j = 0;
-            rs.beforeFirst();
-            while (rs.next()) {
-                types[j] = rs.getString("type");
-                j++;
-            }
+        /* try {
+        ;
+        }
 
         } catch (Exception ex) {
-            ex.printStackTrace();
+        ex.printStackTrace();
         }
         /*
-         for (int i = 0; i < types.length; i++) {
-         System.out.println("types :??? " + i + " ---" + types[i]);
-         typewiseTotal.put(types[i], 0);
-         }*/
+        for (int i = 0; i < types.length; i++) {
+        System.out.println("types :??? " + i + " ---" + types[i]);
+        typewiseTotal.put(types[i], 0);
+        }*/
 
     }
 
@@ -123,12 +116,16 @@ public class ReportGenerator {
             button.addActionListener(new ActionListener() {
 
                 public void actionPerformed(ActionEvent ae) {
-                    Date date = calendarFrom.getDate();
-                    String dateFrom = (date.getYear() + 1900) + "-" + (date.getMonth() + 1) + "-" + (date.getDate());
+                    Date date1 = calendarFrom.getDate();
+                    ArrayList months=new ArrayList();
+                    String dateFrom = (date1.getYear() + 1900) + "-" + (date1.getMonth() + 1) + "-" + (date1.getDate());
                     System.out.println(dateFrom);
-                    date = calendarTo.getDate();
-                    String dateTo = (date.getYear() + 1900) + "-" + (date.getMonth() + 1) + "-" + (date.getDate());
+                    Date date2 = calendarTo.getDate();
+                    String dateTo = (date2.getYear() + 1900) + "-" + (date2.getMonth() + 1) + "-" + (date2.getDate());
                     System.out.println(dateTo);
+                    currMonthIndex=
+                    while
+
                     try {
                         generateTable(conn, dateFrom, dateTo);
                     } catch (Exception ex) {
@@ -153,6 +150,25 @@ public class ReportGenerator {
 
     public void generateTable(Connection con, String dateFrom, String dateTo)
             throws SQLException {
+        Statement stmt = conn.createStatement();
+        String query = "SET @start_date=" + "'" + dateFrom + "'";
+        stmt.executeUpdate(query);
+        query = "SET @end_date =" + "'" + dateTo + "'";
+        stmt.executeUpdate(query);
+        query = "SELECT `alltypes`.`type` , SUM(`production`.`quantity`) FROM `alltypes` NATURAL JOIN"
+                + "`production` WHERE   `alltypes`.`type` =`production`.`at_type` AND "
+                + " `production`.`date` BETWEEN @start_date AND @end_date GROUP BY `type`  ";
+        rs = stmt.executeQuery(query);
+        int k = getLength(rs);
+        System.out.println("types lengh is " + k);
+
+        types = new String[k];
+        int j = 0;
+        rs.beforeFirst();
+        while (rs.next()) {
+            types[j] = rs.getString("type");
+            j++;
+        }
         for (int i = 0; i < types.length; i++) {
             System.out.println("types :??? " + i + " ---" + types[i]);
             typewiseTotal.put(types[i], 0);
@@ -174,11 +190,7 @@ public class ReportGenerator {
             splittedDateTo[2] = "0" + splittedDateTo[2];
         }
         String indianDateTo = splittedDateTo[2] + "-" + splittedDateTo[1] + "-" + splittedDateTo[0];
-        Statement stmt = stmt = con.createStatement();
-        String query = "SET @start_date=" + "'" + dateFrom + "'";
-        stmt.executeQuery(query);
-        query = "SET @end_date =" + "'" + dateTo + "'";
-        stmt.executeQuery(query);
+
         query = "select 'Type','RHeadMax','RHeadMin','RDischMax','RDischMin','OAEffMax','OAEffMin','MaxCurrMax','MaxCurrMin'"
                 + "union all"
                 + "(SELECT `at_type` AS 'Type',"
@@ -256,6 +268,7 @@ public class ReportGenerator {
                     + " MONTHNAME(STR_TO_DATE(`NMonth`, '%m')) AS `Month`,`Year`,";
             for (int i = 0; i < types.length; i++) {
                 query = query + " MAX(IF(`Type` = '" + types[i] + "', `Quantity`,NULL)) AS `" + types[i] + "`";
+                // query = query + " `Quantity` AS `" + types[i] + "`";
                 if (i != types.length - 1) {
                     query = query + ",";
                 }
@@ -353,6 +366,7 @@ public class ReportGenerator {
             t = 0;
             for (String key : typewiseTotal.keySet()) {
                 t = t + typewiseTotal.get(key);
+                //System.out.println(" type wise total is"+t);
             }
             lbl = new Label(CURR_COL_PR, CURR_ROW, Integer.toString(t));
             lbl.setCellFormat(wcf);
