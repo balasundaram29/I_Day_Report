@@ -123,8 +123,13 @@ public class ReportGenerator {
                     Date date2 = calendarTo.getDate();
                     String dateTo = (date2.getYear() + 1900) + "-" + (date2.getMonth() + 1) + "-" + (date2.getDate());
                     System.out.println(dateTo);
-                    currMonthIndex=
-                    while
+                    String currMonthIndex=date1.getYear()+1900+"-"+date1.getMonth();
+                    String finalMonthIndex=date2.getYear()+1900+"-"+date2.getMonth();
+                    months.add(currMonthIndex);
+                    int i=1;
+                    while(currMonthIndex!=finalMonthIndex){
+                         
+                    }
 
                     try {
                         generateTable(conn, dateFrom, dateTo);
