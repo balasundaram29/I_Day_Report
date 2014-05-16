@@ -38,6 +38,7 @@ import jxl.write.WritableWorkbook;
  */
 public class ReportGenerator {
 
+    ArrayList months ;
     ResultSet rs;
     String[] types;//= {"AE50", "AE100", "AE130"};
     public static int CURR_ROW;
@@ -47,6 +48,25 @@ public class ReportGenerator {
     Connection conn;
     public static int TABLE_START_COL = 1;
     HashMap<String, Integer> typewiseTotal = new HashMap<String, Integer>();
+    HashMap<Integer, String> monthMap = getMonthMap();
+
+    public HashMap getMonthMap() {
+        HashMap<Integer, String> monthMap = new HashMap<Integer, String>();
+        monthMap.put(1, "January");
+        monthMap.put(2, "February");
+        monthMap.put(3, "March");
+        monthMap.put(4, "April");
+        monthMap.put(5, "May");
+        monthMap.put(6, "June");
+        monthMap.put(7, "July");
+        monthMap.put(8, "August");
+        monthMap.put(9, "September");
+        monthMap.put(10, "October");
+        monthMap.put(11, "November");
+        monthMap.put(12, "December");
+        return monthMap;
+
+    }
 
     public int getLength(ResultSet rs) {
 
@@ -63,7 +83,18 @@ public class ReportGenerator {
         return i;
     }
 
+    public String createMonthString(int year, int month) {
+        /*String s1;
+        if (month<10)
+        s1="0"+month;
+        else
+        s1=""+month;*/
+        return monthMap.get(month) + " " + year;
+
+    }
+
     public ReportGenerator() {
+
         conn = null;
         try {
             conn = Utilities.getConnection();
@@ -117,22 +148,50 @@ public class ReportGenerator {
 
                 public void actionPerformed(ActionEvent ae) {
                     Date date1 = calendarFrom.getDate();
-                    ArrayList months=new ArrayList();
+                   months = new ArrayList();
                     String dateFrom = (date1.getYear() + 1900) + "-" + (date1.getMonth() + 1) + "-" + (date1.getDate());
                     System.out.println(dateFrom);
                     Date date2 = calendarTo.getDate();
                     String dateTo = (date2.getYear() + 1900) + "-" + (date2.getMonth() + 1) + "-" + (date2.getDate());
                     System.out.println(dateTo);
-                    String currMonthIndex=date1.getYear()+1900+"-"+date1.getMonth();
-                    String finalMonthIndex=date2.getYear()+1900+"-"+date2.getMonth();
-                    months.add(currMonthIndex);
-                    int i=1;
-                    while(currMonthIndex!=finalMonthIndex){
-                         
+                    //(date1.getYear()+1900)+"-"+(date1.getMonth()+1);
+                    // String finalMonthString=date2.getYear()+1900+"-"+date2.getMonth();
+
+                    int i = 1;
+                    int monthIndex = date1.getMonth() + 1;
+                    int yearIndex = date1.getYear() + 1900;
+                    int finalMonthIndex = date2.getMonth() + 1;
+                    int finalYearIndex = date2.getYear() + 1900;
+                    boolean yearChange = false;
+                    if (date1.getMonth() + 1 == 12) {
+                        yearChange = true;
+                    }
+                    String currMonthString = createMonthString(yearIndex, monthIndex);
+                    months.add(currMonthString);
+                    System.out.println("current Month is" + currMonthString);
+
+                    //currMonthString!=finalMonthString
+                    while (true) {
+                         if (monthIndex == finalMonthIndex && yearIndex == finalYearIndex) {
+                            break;
+                        }
+                        if (monthIndex == 12) {
+                            monthIndex = 1;
+                            yearIndex = yearIndex + 1;
+                        } else {
+                            monthIndex++;
+                        }
+                        currMonthString = createMonthString(yearIndex, monthIndex);
+                        months.add(currMonthString);
+                        System.out.println("current Month is" + currMonthString);
+                        System.out.println("final  Month is" + createMonthString(finalYearIndex, finalMonthIndex));
+
+                       
                     }
 
+
                     try {
-                        generateTable(conn, dateFrom, dateTo);
+                        generateTable(conn, dateFrom, dateTo, date1, date2);
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
@@ -153,7 +212,7 @@ public class ReportGenerator {
         }
     }
 
-    public void generateTable(Connection con, String dateFrom, String dateTo)
+    public void generateTable(Connection con, String dateFrom, String dateTo, Date date1, Date date2)
             throws SQLException {
         Statement stmt = conn.createStatement();
         String query = "SET @start_date=" + "'" + dateFrom + "'";
@@ -322,15 +381,44 @@ public class ReportGenerator {
             lbl = new Label(CURR_COL_PR, CURR_ROW, "Total");
             lbl.setCellFormat(wcf);
             sheet.addCell(lbl);
-
+//fill first with zeros
             CURR_ROW = CURR_ROW + 1;
+            int SAVED_ROW = CURR_ROW;
 
-            int t = 0;
+
+            CURR_COL_PR = TABLE_START_COL;
+            for (int d = 0; d < months.size(); d++) {
+                  CURR_COL_PR = TABLE_START_COL;
+                lbl = new Label(CURR_COL_PR, CURR_ROW, (String) months.get(d));
+                lbl.setCellFormat(wcf);
+                sheet.addCell(lbl);
+
+                for (int i = 0; i <= types.length; i++) {
+                    CURR_COL_PR = CURR_COL_PR + 1;
+                    lbl = new Label(CURR_COL_PR, CURR_ROW, "0");
+                    lbl.setCellFormat(wcf);
+                    sheet.addCell(lbl);
+                }
+                 CURR_ROW = CURR_ROW + 1;
+            }
+            int TOTAL_ROW=CURR_ROW;
+           /*     out1.write();
+            out1.close();
+   String[] commands3 = {"cmd", "/c", "start", "\"DummyTitle\"", "ProductionReport.xls"};//
+            Runtime.getRuntime().exec(commands3);
+            return;*/
+          int t = 0;
+            int index = 0;
             int monthwiseTotal;
+            CURR_ROW = SAVED_ROW;
             while (rs.next()) {
                 monthwiseTotal = 0;
                 CURR_COL_PR = TABLE_START_COL;
-
+                while (!months.get(index).equals(rs.getString("Month") + " " + rs.getString("Year"))) {
+                    System.out.println(months.get(index)+"!="+ rs.getString("Month") + " " + rs.getString("Year"));
+                    CURR_ROW++;
+                    index++;
+                }
                 lbl = new Label(CURR_COL_PR, CURR_ROW, rs.getString("Month") + " " + rs.getString("Year"));
                 lbl.setCellFormat(wcf);
                 sheet.addCell(lbl);
@@ -351,9 +439,12 @@ public class ReportGenerator {
                 lbl.setCellFormat(wcf);
                 sheet.addCell(lbl);
                 CURR_ROW = CURR_ROW + 1;
+                System.out.println ("Current row after inc is " +CURR_ROW);
+                index++;
             }
 
             int a;
+            CURR_ROW=TOTAL_ROW;
             CURR_COL_PR = TABLE_START_COL;
             lbl = new Label(CURR_COL_PR, CURR_ROW, "Total");
             lbl.setCellFormat(wcf);
