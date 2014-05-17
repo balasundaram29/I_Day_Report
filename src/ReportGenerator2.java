@@ -36,7 +36,7 @@ import jxl.write.WritableWorkbook;
  *
  * @author ANNAIENG
  */
-public class ReportGenerator {
+public class ReportGenerator2 {
 
     ArrayList months;
     ResultSet rs;
@@ -93,7 +93,7 @@ public class ReportGenerator {
 
     }
 
-    public ReportGenerator() {
+    public ReportGenerator2() {
 
         conn = null;
         try {
@@ -119,7 +119,7 @@ public class ReportGenerator {
     }
 
     public static void main(String[] args) {
-        new ReportGenerator().go();
+        new ReportGenerator2().go();
     }
 
     public void go() {
@@ -206,7 +206,7 @@ public class ReportGenerator {
             //pane.add(one);
             //generateTable(conn, "db_for_bis_mb");
         } catch (Exception ex) {
-            Logger.getLogger(ReportGenerator.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ReportGenerator2.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -316,7 +316,7 @@ public class ReportGenerator {
              Runtime.getRuntime().exec(commands);*/
             query = "DROP TABLE IF EXISTS  `AllMonths`";
             stmt.executeUpdate(query);
-            query = "CREATE  TABLE `AllMonths` "
+            query = "CREATE TEMPORARY TABLE `AllMonths` "
                     + "("
                     + "month_str VARCHAR(20)"
                     + ")";
@@ -345,7 +345,7 @@ public class ReportGenerator {
             query = "DROP TABLE IF EXISTS  `results`";
             stmt.executeUpdate(query);
 
-            query = " CREATE TABLE MonthView2 AS SELECT "
+            query = " CREATE TEMPORARY TABLE MonthView2 AS SELECT "
                     + " CONCAT(MONTHNAME(STR_TO_DATE(`NMonth`, '%m')),' ',CAST(`Year` AS CHAR)) AS `Month`,";//,`Year`,";
             for (int i = 0; i < types.length; i++) {
                 query = query + " MAX(IF(`Type` = '" + types[i] + "', `Quantity`,NULL)) AS `" + types[i] + "`";
@@ -365,7 +365,7 @@ public class ReportGenerator {
 //                stmt.executeUpdate(query);
             //     query="UPDATE TABLE `MonthView2` SET `Month_Full`=CONCAT(`Month`,' ',`Year`)";
             //    stmt.executeUpdate(query);
-            query = "CREATE TABLE results AS SELECT `month_str`,";
+            query = "CREATE TEMPORARY TABLE results AS SELECT `month_str`,";
             for (int i = 0; i < types.length; i++) {
                 query = query + "COALESCE(" + types[i] + ",0) AS `"+types[i]+"`";
                 if (i + 1 != types.length) {
@@ -380,8 +380,8 @@ public class ReportGenerator {
                 query = "UPDATE TABLE `MonthView2` SET `" + types[i] + "`=0 WHERE `" + types[i] + "`=NULL";
                 stmt.executeUpdate(query);
             }*/
-
-            //    stmt.executeUpdate(query);
+              query="SELECT * FROM `results`";
+              rs=    stmt.executeQuery(query);
             times = new WritableFont(WritableFont.TIMES, 11, WritableFont.NO_BOLD);
             wcf = new WritableCellFormat(times);
             wcf.setBorder(Border.ALL, BorderLineStyle.MEDIUM);
@@ -421,7 +421,7 @@ public class ReportGenerator {
             sheet.addCell(lbl);
 //fill first with zeros
             CURR_ROW = CURR_ROW + 1;
-            int SAVED_ROW = CURR_ROW;
+         /*   int SAVED_ROW = CURR_ROW;
 
             CURR_COL_PR = TABLE_START_COL;
             for (int d = 0; d < months.size(); d++) {
@@ -438,25 +438,25 @@ public class ReportGenerator {
                 }
                 CURR_ROW = CURR_ROW + 1;
             }
-            int TOTAL_ROW = CURR_ROW;
+            int TOTAL_ROW = CURR_ROW;*/
             /*     out1.write();
              out1.close();
              String[] commands3 = {"cmd", "/c", "start", "\"DummyTitle\"", "ProductionReport.xls"};//
              Runtime.getRuntime().exec(commands3);
              return;*/
             int t = 0;
-            int index = 0;
+          //  int index = 0;
             int monthwiseTotal;
-            CURR_ROW = SAVED_ROW;
+           // CURR_ROW = SAVED_ROW;
             while (rs.next()) {
                 monthwiseTotal = 0;
                 CURR_COL_PR = TABLE_START_COL;
-                while (!months.get(index).equals(rs.getString("Month") + " " + rs.getString("Year"))) {
-                    System.out.println(months.get(index) + "!=" + rs.getString("Month") + " " + rs.getString("Year"));
+               /* while (!months.get(index).equals(rs.getString("month_str") )) {
+                    System.out.println(months.get(index) + "!=" + rs.getString("month_str"));
                     CURR_ROW++;
                     index++;
-                }
-                lbl = new Label(CURR_COL_PR, CURR_ROW, rs.getString("Month") + " " + rs.getString("Year"));
+                }*/
+                lbl = new Label(CURR_COL_PR, CURR_ROW, rs.getString("month_str"));
                 lbl.setCellFormat(wcf);
                 sheet.addCell(lbl);
 
@@ -477,11 +477,11 @@ public class ReportGenerator {
                 sheet.addCell(lbl);
                 CURR_ROW = CURR_ROW + 1;
                 System.out.println("Current row after inc is " + CURR_ROW);
-                index++;
+               // index++;
             }
 
             int a;
-            CURR_ROW = TOTAL_ROW;
+          //  CURR_ROW = TOTAL_ROW;
             CURR_COL_PR = TABLE_START_COL;
             lbl = new Label(CURR_COL_PR, CURR_ROW, "Total");
             lbl.setCellFormat(wcf);
