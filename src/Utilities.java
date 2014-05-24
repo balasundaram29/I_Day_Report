@@ -14,7 +14,7 @@ import java.util.Properties;
  */
 public class Utilities {
 
-    public static Connection getConnection() {
+    public static Connection getConnection(String dbName) {
 
         Connection conn = null;
         Properties connectionProps = new Properties();
@@ -25,7 +25,7 @@ public class Utilities {
         conn = DriverManager.getConnection(
                 "jdbc:" + "mysql" + "://"
                 + "localhost"
-                + ":" + "3306" + "/db_for_bis_mb",
+                + ":" + "3306/" + dbName,
                 connectionProps);
 
         System.out.println("Connected to database");

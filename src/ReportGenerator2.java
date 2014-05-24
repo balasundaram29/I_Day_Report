@@ -166,9 +166,9 @@ public class ReportGenerator2 {
         String dbName = "db_for_bis_" + licenceSuffix;
         String licenceDetails;
         if (licenceSuffix == "sub") {
-            licenceDetails = "Openwell submersible Pumpsets; IS 14220; CM/L No :xxx660865";
+            licenceDetails = "Openwell Submersible Pumpsets; IS 14220; CM/L No :6610865";
         } else {
-            licenceDetails = "Centrifugal Monoblock Pumpsets; IS 9079; CM/L No :xxx6608659";
+            licenceDetails = "Centrifugal Monoblock Pumpsets; IS 9079; CM/L No :6782793";
         }
         conn = Utilities.getConnection(dbName);
         Date dateR = calendarReportDate.getDate();
