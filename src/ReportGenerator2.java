@@ -19,6 +19,8 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.UIManager;
+import javax.swing.UIManager.LookAndFeelInfo;
 import jxl.Workbook;
 import jxl.format.Alignment;
 import jxl.format.Border;
@@ -29,6 +31,7 @@ import jxl.write.WritableCellFormat;
 import jxl.write.WritableFont;
 import jxl.write.WritableSheet;
 import jxl.write.WritableWorkbook;
+import net.miginfocom.swing.MigLayout;
 
 /*
  * To change this template, choose Tools | Templates
@@ -106,10 +109,30 @@ public class ReportGenerator2 {
     }
 
     public static void main(String[] args) {
+
+         try {
+        // Set System L&F
+        UIManager.setLookAndFeel(
+            UIManager.getSystemLookAndFeelClassName());
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+    }
+
+     /*   try {
+            for (LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                if ("Nimbus".equals(info.getName())) {
+                    UIManager.setLookAndFeel(info.getClassName());
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            // If Nimbus is not available, you can set the GUI to another look and feel.
+        }*/
         new ReportGenerator2().go();
     }
 
-    public void go() {
+      public void go() {
 
         try {
 
@@ -118,21 +141,21 @@ public class ReportGenerator2 {
             gui.setLocation(200, 200);
 
             JPanel pane = new JPanel();
-            pane.setLayout(new GridLayout(0, 5, 10, 2));
-            pane.add(new JLabel("                   "));
-            pane.add(new JLabel("           Report Date : "));
-           
+            pane.setLayout(new MigLayout("","[]10[grow]30[][grow]","[]40[]20"));
+           // pane.add(new JLabel("                   "));
+            pane.add(new JLabel("Report Date : "));
+
             final JDateChooser calendarReportDate = new JDateChooser(new Date(), "dd-MM-yyyy");
-            pane.add(calendarReportDate);
-             pane.add(new JLabel("                   "));
-            pane.add(new JLabel("                   "));
-            pane.add(new JLabel("                  From : "));
+            pane.add(calendarReportDate,"width 120:120:,grow,wrap");
+            // pane.add(new JLabel("                   "));
+            //pane.add(new JLabel("                   "));
+            pane.add(new JLabel("From : "));
             final JDateChooser calendarFrom = new JDateChooser(new Date(), "dd-MM-yyyy");
-            pane.add(calendarFrom);
-            pane.add(new JLabel("                   "));
-            pane.add(new JLabel("                  To : "));
+            pane.add(calendarFrom,"width 120:120:,grow");
+          //  pane.add(new JLabel("                   "));
+            pane.add(new JLabel("To : "));
             final JDateChooser calendarTo = new JDateChooser(new Date(), "dd-MM-yyyy");
-            pane.add(calendarTo);
+            pane.add(calendarTo,"width 120:120:,grow,wrap");
             Date date = calendarFrom.getDate();
             JButton button = new JButton("Generate Reports");
             button.addActionListener(new ActionListener() {
@@ -149,9 +172,9 @@ public class ReportGenerator2 {
 
                 }
             });
-            pane.add(new JLabel("                   "));
-            pane.add(new JLabel("                   "));
-            pane.add(button);
+           // pane.add(new JLabel("                   "));
+            //pane.add(new JLabel("                   "));
+            pane.add(button,"cell 1 2");//cell column row width height
             gui.setContentPane(pane);
             gui.pack();
             gui.setVisible(true);
@@ -160,6 +183,7 @@ public class ReportGenerator2 {
             Logger.getLogger(ReportGenerator2.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+
 
     public void generateTable(JDateChooser  calendarReportDate,JDateChooser calendarFrom, JDateChooser calendarTo, String licenceSuffix)
             throws SQLException {
